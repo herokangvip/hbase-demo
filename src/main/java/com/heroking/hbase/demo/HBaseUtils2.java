@@ -13,29 +13,31 @@ import java.util.*;
 
 
 /**
+ * 2.x，3.x可用
+ * HTableDescriptor,HColumnDescriptor等2.x废弃，3.x移除
  * @author k
  * @version 1.0
  */
-public class HBaseDemo {
+public class HBaseUtils2 {
 
     // 建表
     public static void createTable(String tableName, String[] cols) throws IOException {
         Admin admin = null;
         Connection connection = null;
         try {
-            connection = HBaseUtils.getConnection();
+            connection = HBaseFactory.getConnection();
             admin = connection.getAdmin();
             TableName tName = TableName.valueOf(tableName);
             if (admin.tableExists(tName)) {
                 System.out.println("talbe is exists!");
             } else {
                 System.out.println("创建表!");
-                HTableDescriptor hTableDescriptor = new HTableDescriptor(TableName.valueOf(tableName));
+                TableDescriptorBuilder tableDescriptor = TableDescriptorBuilder.newBuilder(TableName.valueOf(tableName));
                 for (String col : cols) {
-                    HColumnDescriptor hColumnDescriptor = new HColumnDescriptor(col);
-                    hTableDescriptor.addFamily(hColumnDescriptor);
+                    ColumnFamilyDescriptor family = ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes(col)).build();//构建列族对象
+                    tableDescriptor.setColumnFamily(family);//设置列族
                 }
-                admin.createTable(hTableDescriptor);
+                admin.createTable(tableDescriptor.build());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -68,7 +70,7 @@ public class HBaseDemo {
         Connection connection = null;
         boolean flag = false;
         try {
-            connection = HBaseUtils.getConnection();
+            connection = HBaseFactory.getConnection();
             table = connection.getTable(TableName.valueOf(tableName));
             Put put = new Put(Bytes.toBytes(rowKey));
             put.addColumn(Bytes.toBytes(columnFamily), Bytes.toBytes(columnQualifier), Bytes.toBytes(value));
@@ -92,7 +94,7 @@ public class HBaseDemo {
         BufferedMutator bufferedMutator = null;
         Connection connection = null;
         try {
-            connection = HBaseUtils.getConnection();
+            connection = HBaseFactory.getConnection();
             bufferedMutator = connection.getBufferedMutator(TableName.valueOf("user表"));
             Put put = new Put(Bytes.toBytes("rowKeyUser11"));
             put.addColumn(Bytes.toBytes("列族名"), Bytes.toBytes("user_name"), Bytes.toBytes("张三"));
@@ -126,7 +128,7 @@ public class HBaseDemo {
         Table table = null;
         Connection connection = null;
         try {
-            connection = HBaseUtils.getConnection();
+            connection = HBaseFactory.getConnection();
             table = connection.getTable(TableName.valueOf(tableName));
             Get get = new Get(Bytes.toBytes(rowKey));
             //如果列数较多，可以指定拿特定列的值
@@ -161,7 +163,7 @@ public class HBaseDemo {
         Connection connection = null;
         List<Map<String, Object>> getResults;
         try {
-            connection = HBaseUtils.getConnection();
+            connection = HBaseFactory.getConnection();
             table = connection.getTable(TableName.valueOf(tableName));
             Result[] results = table.get(getList);
             getResults = new LinkedList<Map<String, Object>>();
@@ -195,16 +197,16 @@ public class HBaseDemo {
         Table table = null;
         Connection connection = null;
         try {
-            connection = HBaseUtils.getConnection();
+            connection = HBaseFactory.getConnection();
             table = connection.getTable(TableName.valueOf(tableName));
             Scan scan = new Scan();
             scan.addFamily(colFamily.getBytes());
             if (StringUtils.isNotBlank(lastRowKey)) {
-                scan.setStartRow(Bytes.toBytes(lastRowKey));
+                scan.withStartRow(Bytes.toBytes(lastRowKey),true);
             } else {
-                scan.setStartRow(Bytes.toBytes(startRow));
+                scan.withStartRow(Bytes.toBytes(startRow),true);
             }
-            scan.setStopRow(Bytes.toBytes(stopRow));
+            scan.withStopRow(Bytes.toBytes(stopRow),true);
             //MUST_PASS_ALL过滤器必须全符合
             FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
             //分页过滤器(与其它过滤器一起使用是分页过滤器放到后面)
@@ -293,13 +295,13 @@ public class HBaseDemo {
 
     @Test
     public void testPut() throws Exception {
-        put("kang", "10003", "col", "name", "小明");
+        put("tname", "10003", "col", "name", "小明");
     }
 
 
     @Test
     public void testGet() throws Exception {
-        get("kang", "10003");
+        get("tname", "10003");
     }
 
     @Test
@@ -310,7 +312,7 @@ public class HBaseDemo {
         getList.add(get1);
         getList.add(get2);
         try {
-            List<Map<String, Object>> users = getList("kang", getList);
+            List<Map<String, Object>> users = getList("tname", getList);
             for (Map<String, Object> user : users) {
                 Iterator<Map.Entry<String, Object>> entries = user.entrySet().iterator();
                 while (entries.hasNext()) {
@@ -326,19 +328,19 @@ public class HBaseDemo {
 
     @Test
     public void testCreateTable() throws Exception {
-        String[] arr = new String[]{"tel"};
-        createTable("kang", arr);
+        String[] arr = new String[]{"sku"};
+        createTable("tname", arr);
     }
 
     @Test
     public void testScanPageList() throws Exception {
         //起止行符合包左不包右原则
-        scanPageData("kang","col","10001","10009","",5);
+        scanPageData("tname","col","10001","10009","",5);
         System.out.println("=============");
-        scanPageData("kang","col","10001","10009","10005",5);
+        scanPageData("tname","col","10001","10009","10005",5);
         System.out.println("=============");
 
-        scanPageData("kang","col","10001","10009","10010",5);
+        scanPageData("tname","col","10001","10009","10010",5);
         System.out.println("=============");
 
     }
@@ -349,12 +351,12 @@ public class HBaseDemo {
         Table table = null;
         ResultScanner scanner = null;
         try {
-            connection = HBaseUtils.getConnection();
-            table = connection.getTable(TableName.valueOf("kang"));
+            connection = HBaseFactory.getConnection();
+            table = connection.getTable(TableName.valueOf("tname"));
             Scan scan = new Scan();
             //请根据业务场景合理设置StartKey，StopKey
-            scan.setStartRow(Bytes.toBytes("10001"));
-            scan.setStopRow(Bytes.toBytes("10004"));
+            scan.withStartRow(Bytes.toBytes("10001"),true);
+            scan.withStopRow(Bytes.toBytes("10004"),true);
             scanner = table.getScanner(scan);
             for (Result result : scanner) {
                 System.out.println(Bytes.toString(result.getRow()));
