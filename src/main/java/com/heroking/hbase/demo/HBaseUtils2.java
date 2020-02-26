@@ -29,13 +29,12 @@ public class HBaseUtils2 {
             admin = connection.getAdmin();
             TableName tName = TableName.valueOf(tableName);
             if (admin.tableExists(tName)) {
-                System.out.println("talbe is exists!");
+                //表不存在
             } else {
-                System.out.println("创建表!");
                 TableDescriptorBuilder tableDescriptor = TableDescriptorBuilder.newBuilder(TableName.valueOf(tableName));
                 for (String col : cols) {
                     ColumnFamilyDescriptor family = ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes(col)).build();//构建列族对象
-                    tableDescriptor.setColumnFamily(family);//设置列族
+                    tableDescriptor.setColumnFamily(family);
                 }
                 admin.createTable(tableDescriptor.build());
             }
@@ -46,7 +45,6 @@ public class HBaseUtils2 {
                 admin.close();
             }
             if (connection != null) {
-                //如果频繁使用，不用关闭连接
                 connection.close();
             }
         }
@@ -58,11 +56,11 @@ public class HBaseUtils2 {
      * 同步写
      *
      * @param tableName       表名
-     * @param rowKey          行键(此处测试使用了string类型，实际可以任意类型拼接的byte[])
+     * @param rowKey          行键
      * @param columnFamily    列族
      * @param columnQualifier 列名
      * @param value           值
-     * @return boolean 是否插入成功
+     * @return boolean          是否成功
      * @throws Exception
      */
     public Boolean put(String tableName, String rowKey, String columnFamily, String columnQualifier, String value) throws Exception {
@@ -81,7 +79,6 @@ public class HBaseUtils2 {
                 table.close();
             }
             if (connection != null) {
-                //如果频繁使用，不用关闭连接
                 connection.close();
             }
         }
@@ -106,14 +103,13 @@ public class HBaseUtils2 {
             put2.addColumn(Bytes.toBytes("列族名"), Bytes.toBytes("user_name"), Bytes.toBytes("王五"));
             putList.add(put1);
             putList.add(put2);
-            bufferedMutator.mutate(putList);//批量异步写
+            bufferedMutator.mutate(putList);//批量
 
         } finally {
             if (bufferedMutator != null) {
                 bufferedMutator.close();
             }
             if (connection != null) {
-                //如果频繁使用，不用关闭连接
                 connection.close();
             }
         }
@@ -122,7 +118,7 @@ public class HBaseUtils2 {
 
     /**
      * @param tableName 表名
-     * @param rowKey    行键(此处测试使用了string类型，实际可以任意类型拼接的byte[])
+     * @param rowKey    行键
      */
     public static void get(String tableName, String rowKey) throws Exception {
         Table table = null;
@@ -131,31 +127,30 @@ public class HBaseUtils2 {
             connection = HBaseFactory.getConnection();
             table = connection.getTable(TableName.valueOf(tableName));
             Get get = new Get(Bytes.toBytes(rowKey));
-            //如果列数较多，可以指定拿特定列的值
+            //可以读取指定列的值
             //get.addColumn(Bytes.toBytes("info"), Bytes.toBytes("user_name"));
             Result result = table.get(get);
             for (Cell cell : result.listCells()) {
-                System.out.println("qualifier:" + Bytes.toString(CellUtil.cloneQualifier(cell)));
-                System.out.println("value:" + Bytes.toString(CellUtil.cloneValue(cell)));
-                System.out.println("-------------------------------");
+                System.out.println("列名:" + Bytes.toString(CellUtil.cloneQualifier(cell)));
+                System.out.println("值:" + Bytes.toString(CellUtil.cloneValue(cell)));
+                System.out.println("----------------------");
             }
         } finally {
             if (table != null) {
                 table.close();
             }
             if (connection != null) {
-                //如果频繁使用，不用关闭连接
                 connection.close();
             }
         }
     }
 
     /**
-     * 通过getList获取多条记录
+     * 获取多条记录
      *
      * @param tableName 表名
      * @param getList   多个自定义的Get
-     * @return 结果集
+     * @return 结果
      * @throws Exception
      */
     public List<Map<String, Object>> getList(String tableName, List<Get> getList) throws Exception {
@@ -172,9 +167,6 @@ public class HBaseUtils2 {
                 Map<String, Object> map = new HashMap<String, Object>();
                 if (ceList != null && ceList.size() > 0) {
                     for (Cell cell : ceList) {
-                        /*map.put(Bytes.toString(cell.getFamilyArray(), cell.getFamilyOffset(), cell.getFamilyLength()) +
-                                        "_" + Bytes.toString(cell.getQualifierArray(), cell.getQualifierOffset(), cell.getQualifierLength()),
-                                Bytes.toString(cell.getValueArray(), cell.getValueOffset(), cell.getValueLength()));*/
                         map.put(Bytes.toString(CellUtil.cloneQualifier(cell)), Bytes.toString(CellUtil.cloneValue(cell)));
                     }
                 }
@@ -185,14 +177,23 @@ public class HBaseUtils2 {
                 table.close();
             }
             if (connection != null) {
-                //如果频繁使用，不用关闭连接
                 connection.close();
             }
         }
         return getResults;
     }
 
-    // 批量查找数据
+
+    /**
+     *     批量查找数据
+     * @param tableName
+     * @param colFamily
+     * @param startRow
+     * @param stopRow
+     * @param lastRowKey
+     * @param pageSize
+     * @throws IOException
+     */
     public static void scanPageData(String tableName, String colFamily, String startRow, String stopRow, String lastRowKey, int pageSize) throws IOException {
         Table table = null;
         Connection connection = null;
@@ -209,7 +210,7 @@ public class HBaseUtils2 {
             scan.withStopRow(Bytes.toBytes(stopRow),true);
             //MUST_PASS_ALL过滤器必须全符合
             FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-            //分页过滤器(与其它过滤器一起使用是分页过滤器放到后面)
+            //分页过滤器(与其它过滤器一起使用时需要放到后面)
             PageFilter pageFilter = new PageFilter(pageSize);
             filterList.addFilter(pageFilter);
             scan.setFilter(filterList);
@@ -285,7 +286,6 @@ public class HBaseUtils2 {
                 table.close();
             }
             if (connection != null) {
-                //如果频繁使用，不用关闭连接
                 connection.close();
             }
         }
@@ -319,7 +319,7 @@ public class HBaseUtils2 {
                     Map.Entry<String, Object> entry = entries.next();
                     System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
                 }
-                System.out.println("-------------------------------");
+                System.out.println("------------------");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -336,12 +336,12 @@ public class HBaseUtils2 {
     public void testScanPageList() throws Exception {
         //起止行符合包左不包右原则
         scanPageData("tname","col","10001","10009","",5);
-        System.out.println("=============");
+        System.out.println("-----------");
         scanPageData("tname","col","10001","10009","10005",5);
-        System.out.println("=============");
+        System.out.println("----------");
 
         scanPageData("tname","col","10001","10009","10010",5);
-        System.out.println("=============");
+        System.out.println("-----------");
 
     }
 
@@ -363,9 +363,9 @@ public class HBaseUtils2 {
                 for (Cell cell : result.listCells()) {
                     System.out.println("qualifier:" + Bytes.toString(CellUtil.cloneQualifier(cell)));
                     System.out.println("value:" + Bytes.toString(CellUtil.cloneValue(cell)));
-                    System.out.println("**************");
+                    System.out.println("、、、、、");
                 }
-                System.out.println("-------------------------------");
+                System.out.println("-----------");
             }
         } finally {
             if (scanner != null) {
@@ -375,7 +375,6 @@ public class HBaseUtils2 {
                 table.close();
             }
             if (connection != null) {
-                //如果频繁使用，不用关闭连接
                 connection.close();
             }
         }

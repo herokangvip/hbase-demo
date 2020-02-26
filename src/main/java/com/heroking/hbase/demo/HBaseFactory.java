@@ -14,7 +14,6 @@ public class HBaseFactory {
 
     public static void main(String[] args) throws Exception {
         Connection connection = HBaseFactory.getConnection();
-        System.out.println("===");
     }
 
     private static Configuration conf = null;
@@ -27,7 +26,7 @@ public class HBaseFactory {
      */
     private static synchronized Configuration getConfiguration() {
         if (conf == null) {
-            // 此处从配置文件读取配置信息，配置文件在classpath下的hbase-site.xml。
+            // 从配置文件读取配置，classpath:/hbase-site.xml。
             conf = HBaseConfiguration.create();
         }
         return conf;
@@ -35,8 +34,7 @@ public class HBaseFactory {
 
     /**
      * 获取全局唯一的Connection实例
-     * Connection对象自带连接池，请使用单例模式获取连接。
-     *
+     * Connection对象自带连接池，应使用单例模式
      * @return Connection
      */
     public static Connection getConnection()
