@@ -44,9 +44,6 @@ public class HBaseUtils {
             if (admin != null) {
                 admin.close();
             }
-            if (connection != null) {
-                connection.close();
-            }
         }
 
 
@@ -78,9 +75,6 @@ public class HBaseUtils {
             if (table != null) {
                 table.close();
             }
-            if (connection != null) {
-                connection.close();
-            }
         }
         return flag;
     }
@@ -109,9 +103,6 @@ public class HBaseUtils {
             if (bufferedMutator != null) {
                 bufferedMutator.close();
             }
-            if (connection != null) {
-                connection.close();
-            }
         }
 
     }
@@ -137,9 +128,6 @@ public class HBaseUtils {
         } finally {
             if (table != null) {
                 table.close();
-            }
-            if (connection != null) {
-                connection.close();
             }
         }
     }
@@ -174,9 +162,6 @@ public class HBaseUtils {
             if (table != null) {
                 table.close();
             }
-            if (connection != null) {
-                connection.close();
-            }
         }
         return getResults;
     }
@@ -204,6 +189,9 @@ public class HBaseUtils {
             scan.setFilter(filterList);
             ResultScanner resultScanner = table.getScanner(scan);
             for (Result result : resultScanner.next(pageSize)) {
+                if (result.size() == 0) {
+                    continue;
+                }
                 String rowKey = new String(CellUtil.cloneRow(result.rawCells()[0]));
                 if (lastRowKey.equals(rowKey)) {
                     continue;
@@ -272,9 +260,6 @@ public class HBaseUtils {
         } finally {
             if (table != null) {
                 table.close();
-            }
-            if (connection != null) {
-                connection.close();
             }
         }
 

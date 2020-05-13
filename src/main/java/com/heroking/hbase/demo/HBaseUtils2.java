@@ -44,9 +44,6 @@ public class HBaseUtils2 {
             if (admin != null) {
                 admin.close();
             }
-            if (connection != null) {
-                connection.close();
-            }
         }
 
 
@@ -78,9 +75,6 @@ public class HBaseUtils2 {
             if (table != null) {
                 table.close();
             }
-            if (connection != null) {
-                connection.close();
-            }
         }
         return flag;
     }
@@ -109,9 +103,6 @@ public class HBaseUtils2 {
             if (bufferedMutator != null) {
                 bufferedMutator.close();
             }
-            if (connection != null) {
-                connection.close();
-            }
         }
 
     }
@@ -138,9 +129,6 @@ public class HBaseUtils2 {
         } finally {
             if (table != null) {
                 table.close();
-            }
-            if (connection != null) {
-                connection.close();
             }
         }
     }
@@ -175,9 +163,6 @@ public class HBaseUtils2 {
         } finally {
             if (table != null) {
                 table.close();
-            }
-            if (connection != null) {
-                connection.close();
             }
         }
         return getResults;
@@ -284,9 +269,6 @@ public class HBaseUtils2 {
         } finally {
             if (table != null) {
                 table.close();
-            }
-            if (connection != null) {
-                connection.close();
             }
         }
 
